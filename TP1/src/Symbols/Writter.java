@@ -8,11 +8,25 @@ public class Writter
 
     public void Write(char character)
     {
-        System.out.print(character);
-        characterCount++;
-        if (characterCount % 10 == 0) {
-            System.out.print('\n');
+        synchronized (lock)
+        {
+            if (currentCharacter == character)
+            {
+                try
+                {
+                    lock.wait();
+
+                } catch (InterruptedException e)
+                {
+                }
+            }
+            System.out.print(character);
+            characterCount++;
+            if (characterCount % 10 == 0) {
+                System.out.print('\n');
+            }
+            currentCharacter = character;
+            lock.notify();
         }
-        currentCharacter = character;
     }
 }

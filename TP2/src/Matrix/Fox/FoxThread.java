@@ -8,7 +8,6 @@ public class FoxThread extends Thread
     private final Matrix blockB;
     private final Matrix blockC;
 
-
     public FoxThread(Matrix blockA, Matrix blockB, Matrix blockC)
     {
         this.blockA = blockA;

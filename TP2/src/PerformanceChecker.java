@@ -18,7 +18,7 @@ public class PerformanceChecker
         return convertToSeconds(start, end);
     }
 
-    public double countTimeRepeated(int startSize, int endSize, int step) throws Exception
+    public double[] countTimeRepeated(int startSize, int endSize, int step) throws Exception
     {
         int repetitions = (endSize - startSize) / step + 1;
         Matrix[] leftMatrices = new Matrix[repetitions];
@@ -30,13 +30,16 @@ public class PerformanceChecker
             rightMatrices[i] = Utils.createRandomMatrix(size, size, 0, 1000);
         }
 
-        long start = System.currentTimeMillis();
+        double[] results = new double[repetitions];
         for (int i = 0; i < repetitions; i++)
         {
+            long start = System.currentTimeMillis();
             multiplication.multiply(leftMatrices[i], rightMatrices[i]);
+            long end = System.currentTimeMillis();
+            results[i] = convertToSeconds(start, end);
         }
-        long end = System.currentTimeMillis();
-        return convertToSeconds(start, end);
+
+        return results;
     }
 
     private double convertToSeconds(long start, long end)

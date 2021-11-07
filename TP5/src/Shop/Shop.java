@@ -1,36 +1,47 @@
 package Shop;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 public class Shop
 {
+    private final int numberOfProcessors;
+    private final int maxInQueue;
     private final ExecutorService executor;
     private final Queue<Runnable> queue;
-    private final int numberOfProcessors;
 
     private int numberOfClients;
-    private int enqueuedClients;
+    private int totalClients;
     private int rejectedClients;
-    private List<Double> averageClientsInQueue;
 
-    public Shop(int numberOfProcessors)
+    public Shop(int numberOfProcessors, int maxInQueue)
     {
         this.numberOfProcessors = numberOfProcessors;
+        this.maxInQueue = maxInQueue;
         executor = Executors.newFixedThreadPool(numberOfProcessors);
         queue = new ArrayDeque<>();
-        averageClientsInQueue = new ArrayList<>();
     }
 
     public synchronized void enqueue(Client client)
     {
-        enqueuedClients++;
-        queue.offer(new Runnable()
+        totalClients++;
+        if (queue.size() >= maxInQueue)
+        {
+            rejectedClients++;
+            return;
+        }
+        queue.offer(wrap(client));
+        if (numberOfClients < numberOfProcessors)
+        {
+            scheduleNext();
+        }
+    }
+
+    private synchronized Runnable wrap(Client client)
+    {
+        return new Runnable()
         {
             @Override
             public void run()
@@ -46,11 +57,7 @@ public class Shop
                     scheduleNext();
                 }
             }
-        });
-        if (numberOfClients < numberOfProcessors)
-        {
-            scheduleNext();
-        }
+        };
     }
 
     private synchronized void scheduleNext()
@@ -62,84 +69,24 @@ public class Shop
         }
     }
 
-
-    public Thread processFor(int executionTime, int checkRate)
+    public void shutdown()
     {
-        return new ShutdownThread(executionTime, checkRate);
+        executor.shutdownNow();
+        rejectedClients += queue.size();
     }
 
-    private void checkQueue()
+    public int getTotalClients()
     {
-        double size = queue.size();
-        averageClientsInQueue.add(size);
+        return totalClients;
     }
 
-    private void shutdown()
+    public int getRejectedClients()
     {
-        executor.shutdown();
-        rejectedClients = queue.size();
-        try
-        {
-            executor.awaitTermination(100, TimeUnit.MILLISECONDS);
-        }
-        catch (InterruptedException ignored)
-        {
-        }
+        return rejectedClients;
     }
 
-    public String getStatistic()
+    public int getQueuedClients()
     {
-        var builder = new StringBuilder();
-
-        builder.append("Clients: ");
-        builder.append(enqueuedClients);
-        builder.append("\n");
-
-        builder.append("Processed: ");
-        builder.append(enqueuedClients - rejectedClients);
-        builder.append("\n");
-
-        builder.append("Rejected: ");
-        builder.append(rejectedClients);
-        builder.append("\n");
-
-        builder.append("Average queue: ");
-        builder.append(averageClientsInQueue.stream().mapToDouble(d -> d).average().getAsDouble());
-        builder.append("\n");
-
-        return builder.toString();
-    }
-
-    private class ShutdownThread extends Thread
-    {
-        private final int executionTime;
-        private final int checkRate;
-
-        public ShutdownThread(int executionTime, int checkRate)
-        {
-
-            this.executionTime = executionTime;
-            this.checkRate = checkRate;
-        }
-
-        @Override
-        public void run()
-        {
-            try
-            {
-                int time = 0;
-                while (time < executionTime)
-                {
-                    Thread.sleep(checkRate);
-                    checkQueue();
-                    time += checkRate;
-                }
-                shutdown();
-            }
-            catch (InterruptedException e)
-            {
-                e.printStackTrace();
-            }
-        }
+        return queue.size();
     }
 }

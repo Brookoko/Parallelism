@@ -5,13 +5,15 @@ import java.util.Random;
 public class ClientThread extends Thread
 {
     private final Shop shop;
+    private final int createRate;
     private final Random random;
 
     private int count;
 
-    public ClientThread(Shop shop)
+    public ClientThread(Shop shop, int createRate)
     {
         this.shop = shop;
+        this.createRate = createRate;
         random = new Random();
     }
 
@@ -20,15 +22,14 @@ public class ClientThread extends Thread
     {
         try
         {
-            while (true)
+            while (!isInterrupted())
             {
-                Thread.sleep(random.nextInt(100));
+                Thread.sleep(createRate);
                 shop.enqueue(createClient());
             }
         }
-        catch (InterruptedException e)
+        catch (InterruptedException ignored)
         {
-            e.printStackTrace();
         }
     }
 

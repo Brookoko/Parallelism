@@ -1,5 +1,7 @@
 package Bank;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 public class Main
 {
     public static final int ACCOUNTS = 10;
@@ -7,11 +9,11 @@ public class Main
 
     public static void main(String[] args)
     {
-        Bank b = new Bank(ACCOUNTS, INITIAL_BALANCE);
-        int i;
-        for (i = 0; i < ACCOUNTS; i++)
+        ReentrantLock lock = new ReentrantLock();
+        Bank bank = new BankUnsafe(ACCOUNTS, INITIAL_BALANCE);
+        for (int i = 0; i < ACCOUNTS; i++)
         {
-            TransferThread t = new TransferThread(b, i, INITIAL_BALANCE);
+            Thread t = new TransferThreadSafe(bank, i, INITIAL_BALANCE, lock);
             t.setPriority(Thread.NORM_PRIORITY + i % 2);
             t.start();
         }

@@ -13,9 +13,9 @@ public class Main
         Bank bank = new BankUnsafe(ACCOUNTS, INITIAL_BALANCE);
         for (int i = 0; i < ACCOUNTS; i++)
         {
-            Thread t = new TransferThreadSafe(bank, i, INITIAL_BALANCE, lock);
-            t.setPriority(Thread.NORM_PRIORITY + i % 2);
-            t.start();
+            Thread thread = new TransferThreadSafe(bank, i, INITIAL_BALANCE, lock);
+            thread.setPriority(Thread.NORM_PRIORITY + i % 2);
+            thread.start();
         }
     }
 }

@@ -1,23 +1,22 @@
+package CP;
+
 import java.util.Random;
 
-public class Producer implements Runnable
+public class Consumer implements Runnable
 {
-    private final Drop drop;
-    private final int size;
+    private Drop drop;
 
-    public Producer(Drop drop, int size)
+    public Consumer(Drop drop)
     {
         this.drop = drop;
-        this.size = size;
     }
 
     public void run()
     {
         Random random = new Random();
-
-        for (int i = 0; i < size; i++)
+        for (int number = drop.take(); number >= 0; number = drop.take())
         {
-            drop.put(i);
+            System.out.println(number);
             try
             {
                 Thread.sleep(random.nextInt(10));

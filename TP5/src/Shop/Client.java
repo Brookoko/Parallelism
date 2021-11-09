@@ -4,7 +4,8 @@ import java.util.Random;
 
 public class Client implements Runnable
 {
-    private final int MAX_DELAY = 1000;
+    private static final int TIME_TO_PROCESS = 100;
+    private final int MAX_DELAY = 400;
     private final int MIN_DELAY = 10;
 
     private final long id;

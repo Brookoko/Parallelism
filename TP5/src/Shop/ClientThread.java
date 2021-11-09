@@ -24,7 +24,7 @@ public class ClientThread extends Thread
         {
             while (!isInterrupted())
             {
-                Thread.sleep(createRate);
+                Thread.sleep(random.nextInt(createRate));
                 shop.enqueue(createClient());
             }
         }

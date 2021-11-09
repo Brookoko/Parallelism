@@ -5,7 +5,7 @@ public class Model extends Thread
     private static final int NUMBER_OF_QUEUES = 3;
     private static final int MAX_IN_QUEUE = 50;
     private static final int CLIENT_RATE = 100;
-    private static final int TIME_TO_PROCESS = 110000;
+    private static final int TIME_TO_PROCESS = 60000;
     private static final int TIME_TO_PRINT_STATISTIC = 5000;
 
     public Model()

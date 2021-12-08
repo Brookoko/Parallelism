@@ -31,6 +31,16 @@ public class BallCanvas extends JPanel
     public void createBall(BallType type)
     {
         Random random = new Random();
+        double x = random.nextInt(getWidth() - 2 * BALL_RADIUS) + BALL_RADIUS;
+        double y = random.nextInt(getHeight() - 2 * BALL_RADIUS) + BALL_RADIUS;
+        double dx = random.nextBoolean() ? BALL_SPEED : -BALL_SPEED;
+        double dy = random.nextBoolean() ? BALL_SPEED : -BALL_SPEED;
+        Ball ball = new Ball(x, y, BALL_RADIUS, dx, dy, type);
+        add(ball);
+    }
+
+    public void createBallAtBottomRight(BallType type)
+    {
         double x = getWidth() - 2 * BALL_RADIUS;
         double y = getHeight() - BALL_RADIUS;
         double dx = -BALL_SPEED;

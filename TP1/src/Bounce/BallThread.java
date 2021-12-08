@@ -27,14 +27,18 @@ public class BallThread extends Thread
     {
         try
         {
-            if (thread != null) thread.join();
+            if (thread != null)
+            {
+                thread.join();
+            }
             while (ball.isAlive())
             {
                 ball.move(ballCanvas.getWidth(), ballCanvas.getHeight());
                 ballCanvas.checkIntersectionsFor(ball);
                 Thread.sleep(deltaTime);
             }
-        } catch (InterruptedException ex)
+        }
+        catch (InterruptedException ex)
         {
         }
     }

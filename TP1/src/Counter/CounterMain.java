@@ -6,7 +6,7 @@ public class CounterMain
 
     public static void main(String[] args) throws InterruptedException
     {
-        Counter counter = new CounterSynchronized();
+        Counter counter = new CounterLock();
         Thread incrementThread = new IncrementThread(counter, NUMBER_OF_OPERATIONS);
         Thread decrementThread = new DecrementThread(counter, NUMBER_OF_OPERATIONS);
         incrementThread.start();

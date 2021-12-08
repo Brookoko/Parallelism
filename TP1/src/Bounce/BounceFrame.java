@@ -35,8 +35,9 @@ public class BounceFrame extends JFrame
             {
                 for (int i = 0; i < NUMBER_OF_BALLS; i++)
                 {
-                    canvas.createBall(BallType.Simple);
+                    canvas.createBallAtBottomRight(BallType.Simple);
                 }
+                canvas.createBallAtBottomRight(BallType.Prioritized);
             }
         });
 

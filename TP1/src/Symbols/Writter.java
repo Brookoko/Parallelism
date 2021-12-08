@@ -15,7 +15,6 @@ public class Writter
                 try
                 {
                     lock.wait();
-
                 } catch (InterruptedException e)
                 {
                 }

@@ -1,24 +1,29 @@
 package Counter;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 public class CounterLock extends Counter
 {
-    private final Object lock = new Object();
+    private final ReentrantLock locker;
+
+    public CounterLock()
+    {
+        locker = new ReentrantLock();
+    }
 
     @Override
     public void increment()
     {
-        synchronized (lock)
-        {
-            count++;
-        }
+        locker.lock();
+        count++;
+        locker.unlock();
     }
 
     @Override
     public synchronized void decrement()
     {
-        synchronized (lock)
-        {
-            count--;
-        }
+        locker.lock();
+        count--;
+        locker.unlock();
     }
 }

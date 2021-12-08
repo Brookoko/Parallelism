@@ -2,7 +2,7 @@ package Matrix;
 
 public class Matrix
 {
-    private final int[][] data;
+    private final double[][] data;
     private final int height;
     private final int width;
 
@@ -10,17 +10,17 @@ public class Matrix
     {
         this.height = height;
         this.width = width;
-        data = new int[height][width];
+        data = new double[height][width];
     }
 
-    public Matrix(int[][] data)
+    public Matrix(double[][] data)
     {
         this.data = data;
         height = data.length;
         width = data[0].length;
     }
 
-    public int get(int i, int j)
+    public double get(int i, int j)
     {
         return data[i][j];
     }
@@ -40,17 +40,17 @@ public class Matrix
         return width;
     }
 
-    public int[][] getData()
+    public double[][] getData()
     {
         return data;
     }
 
-    public int[] getRow(int i)
+    public double[] getRow(int i)
     {
         return data[i];
     }
 
-    public void setRow(int i, int[] row)
+    public void setRow(int i, double[] row)
     {
         data[i] = row;
     }

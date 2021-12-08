@@ -1,5 +1,6 @@
 import Matrix.Matrix;
 import Matrix.MatrixMultiplication;
+import Matrix.Utils;
 
 public class PerformanceChecker
 {

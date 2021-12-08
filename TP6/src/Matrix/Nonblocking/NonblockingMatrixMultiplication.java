@@ -57,7 +57,6 @@ public class NonblockingMatrixMultiplication extends MatrixMultiplication
         var averow = NRA / numworkers;
         var extra = NRA % numworkers;
         var offset = 0;
-        var requests = new Request[numworkers * 4];
 
         for (var dest = 1; dest <= numworkers; dest++)
         {
@@ -187,10 +186,7 @@ public class NonblockingMatrixMultiplication extends MatrixMultiplication
     private double[] toArray(DoubleBuffer buffer)
     {
         var result = new double[buffer.capacity()];
-        for (var i = 0; i < buffer.capacity(); i++)
-        {
-            result[i] = buffer.get(i);
-        }
+        buffer.get(result);
         return result;
     }
 }

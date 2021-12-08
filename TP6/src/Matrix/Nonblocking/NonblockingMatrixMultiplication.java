@@ -7,6 +7,8 @@ import mpi.MPI;
 import mpi.MPIException;
 import mpi.Request;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
 import java.nio.IntBuffer;
 
@@ -14,7 +16,12 @@ public class NonblockingMatrixMultiplication extends MatrixMultiplication
 {
     private final static int MASTER = 0;
     private final static int FROM_MASTER = 1;
-    private final static int FROM_WORKER = 2;
+    private final static int FROM_WORKER = 10;
+    private final static int OFFSET = 1;
+    private final static int ROWS = 2;
+    private final static int A = 3;
+    private final static int B = 4;
+    private final static int C = 5;
 
     private int NRA;
     private int NCA;
@@ -50,6 +57,7 @@ public class NonblockingMatrixMultiplication extends MatrixMultiplication
         var averow = NRA / numworkers;
         var extra = NRA % numworkers;
         var offset = 0;
+        var requests = new Request[numworkers * 4];
 
         for (var dest = 1; dest <= numworkers; dest++)
         {
@@ -61,14 +69,14 @@ public class NonblockingMatrixMultiplication extends MatrixMultiplication
                 buffer[i] = a.getRow(offset + i);
             }
 
-            MPI.COMM_WORLD.iSend(IntBuffer.allocate(1).put(offset), 1, MPI.INT, dest, FROM_MASTER);
-            MPI.COMM_WORLD.iSend(IntBuffer.allocate(1).put(rows), 1, MPI.INT, dest, FROM_MASTER);
+            MPI.COMM_WORLD.iSend(allocateDirectInt(1).put(offset), 1, MPI.INT, dest, FROM_MASTER + OFFSET);
+            MPI.COMM_WORLD.iSend(allocateDirectInt(1).put(rows), 1, MPI.INT, dest, FROM_MASTER + ROWS);
 
-            var doubleBuffer = DoubleBuffer.wrap(Utils.Flatten(buffer));
-            MPI.COMM_WORLD.iSend(doubleBuffer, rows * NCA, MPI.DOUBLE, dest, FROM_MASTER);
+            var doubleBuffer = allocateDirectDouble(rows * NCA).put(Utils.Flatten(buffer));
+            MPI.COMM_WORLD.iSend(doubleBuffer, rows * NCA, MPI.DOUBLE, dest, FROM_MASTER + A);
 
-            doubleBuffer = DoubleBuffer.wrap(Utils.Flatten(b.getData()));
-            MPI.COMM_WORLD.iSend(doubleBuffer, NCA * NCB, MPI.DOUBLE, dest, FROM_MASTER);
+            doubleBuffer = allocateDirectDouble(b.getHeight() * b.getWidth()).put(Utils.Flatten(b.getData()));
+            MPI.COMM_WORLD.iSend(doubleBuffer, NCA * NCB, MPI.DOUBLE, dest, FROM_MASTER + B);
 
             offset += rows;
         }
@@ -83,10 +91,10 @@ public class NonblockingMatrixMultiplication extends MatrixMultiplication
         for (var source = 1; source <= numworkers; source++)
         {
             var index = source - 1;
-            offsetBuffers[index] = IntBuffer.allocate(1);
-            rowsBuffers[index] = IntBuffer.allocate(1);
-            offsetRequests[index] = MPI.COMM_WORLD.iRecv(offsetBuffers[index], 1, MPI.INT, source, FROM_WORKER);
-            rowsRequests[index] = MPI.COMM_WORLD.iRecv(rowsBuffers[index], 1, MPI.INT, source, FROM_WORKER);
+            offsetBuffers[index] = allocateDirectInt(1);
+            rowsBuffers[index] = allocateDirectInt(1);
+            offsetRequests[index] = MPI.COMM_WORLD.iRecv(offsetBuffers[index], 1, MPI.INT, source, FROM_WORKER + OFFSET);
+            rowsRequests[index] = MPI.COMM_WORLD.iRecv(rowsBuffers[index], 1, MPI.INT, source, FROM_WORKER + ROWS);
         }
 
         Request.waitAll(offsetRequests);
@@ -96,8 +104,8 @@ public class NonblockingMatrixMultiplication extends MatrixMultiplication
         {
             var index = source - 1;
             var rows = rowsBuffers[index].get(0);
-            workersBuffers[index] = DoubleBuffer.allocate(rows * NCB);
-            workersRequests[index] = MPI.COMM_WORLD.iRecv(workersBuffers[index], rows * NCB, MPI.DOUBLE, source, FROM_WORKER);
+            workersBuffers[index] = allocateDirectDouble(rows * NCB);
+            workersRequests[index] = MPI.COMM_WORLD.iRecv(workersBuffers[index], rows * NCB, MPI.DOUBLE, source, FROM_WORKER + C);
         }
 
         Request.waitAll(workersRequests);
@@ -107,7 +115,7 @@ public class NonblockingMatrixMultiplication extends MatrixMultiplication
             var index = source - 1;
             var rows = rowsBuffers[index].get(0);
             var offsetSource = offsetBuffers[index].get(0);
-            var buffer = workersBuffers[index].array();
+            var buffer = toArray(workersBuffers[index]);
             var result = Utils.Nest(buffer, rows, NCB);
             for (var i = 0; i < rows; i++)
             {
@@ -117,33 +125,33 @@ public class NonblockingMatrixMultiplication extends MatrixMultiplication
 
     }
 
-    private void ProcessWorker() throws MPIException, InterruptedException
+    private void ProcessWorker() throws MPIException
     {
-        var offsetBuffer = IntBuffer.allocate(1);
-        var rowsBuffer = IntBuffer.allocate(1);
-        var bufferB = DoubleBuffer.allocate(NCA * NCB);
+        var offsetBuffer = allocateDirectInt(1);
+        var rowsBuffer = allocateDirectInt(1);
+        var bufferB = allocateDirectDouble(NCA * NCB);
 
-        var requests = new Request[4];
+        var requests = new Request[3];
 
-        requests[0] = MPI.COMM_WORLD.iRecv(offsetBuffer, 1, MPI.INT, MASTER, FROM_MASTER);
-        requests[1] = MPI.COMM_WORLD.iRecv(rowsBuffer, 1, MPI.INT, MASTER, FROM_MASTER);
-        requests[3] = MPI.COMM_WORLD.iRecv(bufferB, NCA * NCB, MPI.DOUBLE, MASTER, FROM_MASTER);
-        requests[1].wait();
+        requests[0] = MPI.COMM_WORLD.iRecv(offsetBuffer, 1, MPI.INT, MASTER, FROM_MASTER + OFFSET);
+        requests[1] = MPI.COMM_WORLD.iRecv(bufferB, NCA * NCB, MPI.DOUBLE, MASTER, FROM_MASTER + B);
+        MPI.COMM_WORLD.iRecv(rowsBuffer, 1, MPI.INT, MASTER, FROM_MASTER + ROWS).waitFor();
 
         var rows = rowsBuffer.get(0);
-        var bufferA = DoubleBuffer.allocate(rows * NCA);
-        requests[2] = MPI.COMM_WORLD.iRecv(bufferA, rows * NCA, MPI.DOUBLE, MASTER, FROM_MASTER);
+        var bufferA = allocateDirectDouble(rows * NCA);
+        requests[2] = MPI.COMM_WORLD.iRecv(bufferA, rows * NCA, MPI.DOUBLE, MASTER, FROM_MASTER + A);
 
         Request.waitAll(requests);
 
-        var a = Utils.Nest(bufferA.array(), rows, NCA);
-        var b = Utils.Nest(bufferB.array(), NCA, NCB);
+        var a = Utils.Nest(toArray(bufferA), rows, NCA);
+        var b = Utils.Nest(toArray(bufferB), NCA, NCB);
         var c = multiple(a, b, rows);
         var offset = offsetBuffer.get(0);
 
-        MPI.COMM_WORLD.send(offset, 1, MPI.INT, MASTER, FROM_WORKER);
-        MPI.COMM_WORLD.send(rows, 1, MPI.INT, MASTER, FROM_WORKER);
-        MPI.COMM_WORLD.send(Utils.Flatten(c), rows * NCB, MPI.INT, MASTER, FROM_WORKER);
+        var result = allocateDirectDouble(rows * NCB).put(Utils.Flatten(c));
+        MPI.COMM_WORLD.iSend(allocateDirectInt(1).put(offset), 1, MPI.INT, MASTER, FROM_WORKER + OFFSET);
+        MPI.COMM_WORLD.iSend(allocateDirectInt(1).put(rows), 1, MPI.INT, MASTER, FROM_WORKER + ROWS);
+        MPI.COMM_WORLD.iSend(result, rows * NCB, MPI.DOUBLE, MASTER, FROM_WORKER + C);
     }
 
     private double[][] multiple(double[][] a, double[][] b, int rows)
@@ -160,5 +168,29 @@ public class NonblockingMatrixMultiplication extends MatrixMultiplication
             }
         }
         return c;
+    }
+
+    private IntBuffer allocateDirectInt(int size)
+    {
+        ByteBuffer bb = ByteBuffer.allocateDirect(size * 4);
+        bb.order(ByteOrder.nativeOrder());
+        return bb.asIntBuffer();
+    }
+
+    private DoubleBuffer allocateDirectDouble(int size)
+    {
+        ByteBuffer bb = ByteBuffer.allocateDirect(size * 8);
+        bb.order(ByteOrder.nativeOrder());
+        return bb.asDoubleBuffer();
+    }
+
+    private double[] toArray(DoubleBuffer buffer)
+    {
+        var result = new double[buffer.capacity()];
+        for (var i = 0; i < buffer.capacity(); i++)
+        {
+            result[i] = buffer.get(i);
+        }
+        return result;
     }
 }

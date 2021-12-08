@@ -48,6 +48,7 @@ public class BlockingMatrixMultiplication extends MatrixMultiplication
         var numworkers = MPI.COMM_WORLD.getSize() - 1;
         var averow = NRA / numworkers;
         var extra = NRA % numworkers;
+        offset[0] = 0;
 
         for (var dest = 1; dest <= numworkers; dest++)
         {
@@ -94,7 +95,7 @@ public class BlockingMatrixMultiplication extends MatrixMultiplication
 
         MPI.COMM_WORLD.send(offset, 1, MPI.INT, MASTER, FROM_WORKER);
         MPI.COMM_WORLD.send(rows, 1, MPI.INT, MASTER, FROM_WORKER);
-        MPI.COMM_WORLD.send(Utils.Flatten(c), rows[0] * NCB, MPI.INT, MASTER, FROM_WORKER);
+        MPI.COMM_WORLD.send(Utils.Flatten(c), rows[0] * NCB, MPI.DOUBLE, MASTER, FROM_WORKER);
     }
 
     private double[][] multiple(double[][] a, double[][] b)

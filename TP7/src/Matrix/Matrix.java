@@ -54,4 +54,15 @@ public class Matrix
     {
         data[i] = row;
     }
+
+    public void setData(double[][] data)
+    {
+        for (var i = 0; i < height; i++)
+        {
+            for (var j = 0; j < width; j++)
+            {
+                this.data[i][j] = data[i][j];
+            }
+        }
+    }
 }

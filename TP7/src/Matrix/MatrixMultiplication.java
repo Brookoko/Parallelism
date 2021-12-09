@@ -2,5 +2,5 @@ package Matrix;
 
 public abstract class MatrixMultiplication
 {
-    public abstract Matrix multiply(Matrix a, Matrix b) throws Exception;
+    public abstract void multiply(Matrix a, Matrix b, Matrix c) throws Exception;
 }

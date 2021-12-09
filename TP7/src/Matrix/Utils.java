@@ -1,11 +1,23 @@
 package Matrix;
 
-import Matrix.Matrix;
-
 import java.util.Random;
 
 public class Utils
 {
+    public static Matrix createSequenceMatrix(int height, int width)
+    {
+        double[][] data = new double[height][width];
+        for (int i = 0; i < height; i++)
+        {
+            data[i] = new double[width];
+            for (int j = 0; j < width; j++)
+            {
+                data[i][j] = i * width + j + 1;
+            }
+        }
+        return new Matrix(data);
+    }
+
     public static Matrix createRandomMatrix(int height, int width, int from, int to)
     {
         Random random = new Random();

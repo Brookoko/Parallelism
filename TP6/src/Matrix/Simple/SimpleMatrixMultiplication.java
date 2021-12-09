@@ -6,11 +6,10 @@ import Matrix.MatrixMultiplication;
 public class SimpleMatrixMultiplication extends MatrixMultiplication
 {
     @Override
-    public Matrix multiply(Matrix a, Matrix b)
+    public void multiply(Matrix a, Matrix b, Matrix c)
     {
         var height = a.getHeight();
         var width = b.getHeight();
-        Matrix result = new Matrix(height, width);
 
         for (int i = 0; i < height; i++)
         {
@@ -21,10 +20,8 @@ public class SimpleMatrixMultiplication extends MatrixMultiplication
                 {
                     value += a.get(i, k) * b.get(k, j);
                 }
-                result.set(i, j, value);
+                c.set(i, j, value);
             }
         }
-
-        return result;
     }
 }

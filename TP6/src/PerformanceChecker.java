@@ -1,6 +1,7 @@
 import Matrix.Matrix;
 import Matrix.MatrixMultiplication;
 import Matrix.Utils;
+import mpi.MPI;
 
 public class PerformanceChecker
 {
@@ -14,9 +15,15 @@ public class PerformanceChecker
     public double countTimeFor(Matrix a, Matrix b) throws Exception
     {
         long start = System.currentTimeMillis();
-        multiplication.multiply(a, b);
+        var c = new Matrix(a.getHeight(), b.getWidth());
+        multiplication.multiply(a, b, c);
         long end = System.currentTimeMillis();
         return convertToSeconds(start, end);
+    }
+
+    public double countTimeFor(int size) throws Exception
+    {
+        return countTimeRepeated(size, size, size)[0];
     }
 
     public double[] countTimeRepeated(int startSize, int endSize, int step) throws Exception
@@ -24,18 +31,24 @@ public class PerformanceChecker
         int repetitions = (endSize - startSize) / step + 1;
         Matrix[] leftMatrices = new Matrix[repetitions];
         Matrix[] rightMatrices = new Matrix[repetitions];
-        for (int i = 0; i < repetitions; i++)
+        if (MPI.COMM_WORLD.getRank() == 0)
         {
-            var size = startSize + i * step;
-            leftMatrices[i] = Utils.createRandomMatrix(size, size, 0, 1000);
-            rightMatrices[i] = Utils.createRandomMatrix(size, size, 0, 1000);
+            for (int i = 0; i < repetitions; i++)
+            {
+                var size = startSize + i * step;
+                leftMatrices[i] = Utils.createRandomMatrix(size, size, 0, 1000);
+                rightMatrices[i] = Utils.createRandomMatrix(size, size, 0, 1000);
+            }
         }
 
         double[] results = new double[repetitions];
         for (int i = 0; i < repetitions; i++)
         {
             long start = System.currentTimeMillis();
-            multiplication.multiply(leftMatrices[i], rightMatrices[i]);
+            var result = MPI.COMM_WORLD.getRank() == 0 ?
+                    new Matrix(leftMatrices[i].getHeight(), rightMatrices[i].getWidth()) :
+                    new Matrix(0, 0);
+            multiplication.multiply(leftMatrices[i], rightMatrices[i], result);
             long end = System.currentTimeMillis();
             results[i] = convertToSeconds(start, end);
         }

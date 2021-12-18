@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.multiply;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 

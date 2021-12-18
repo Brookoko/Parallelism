@@ -7,9 +7,20 @@ public class Controller
 {
 
     @RequestMapping("/")
-    public String hello()
+    public String root()
     {
         return "root";
     }
 
+    @RequestMapping("/client")
+    public String clientGet()
+    {
+        return "client";
+    }
+
+    @RequestMapping("/server")
+    public String server()
+    {
+        return "server";
+    }
 }

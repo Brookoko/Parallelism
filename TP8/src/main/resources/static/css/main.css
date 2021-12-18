@@ -1,0 +1,9 @@
+html, body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 18px;
+}
+
+a {
+    text-decoration: none;
+    color: #0366d6;
+}
